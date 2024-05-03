@@ -1,0 +1,9 @@
+name = "Z3"
+uuid = "e6e000be-9be5-4ee1-8d5d-93387670631e"
+version = "0.0.1"
+
+[deps]
+CEnum = "fa961155-64e5-5f13-b03f-caf6b980ea82"
+ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+z3_jll = "1bc4e1ec-7839-5212-8f2f-0d16b7bd09bc"

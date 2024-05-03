@@ -2,6 +2,7 @@ module Z3
 
 include("libz3.jl")
 using .Libz3
+export DeclareSort, _main_ctx
 
 # Making struct mutable to register a finalizer
 mutable struct Context
@@ -65,9 +66,5 @@ function to_symbol(s::Union{String,Int}, ctx=nothing)
     _sym(s::Int) = Z3_mk_int_symbol(_get_ctx(ctx), s)
     return _sym(s)
 end
-
-sort = DeclareSort("sup")
-
-@info "$sort"
 
 end
