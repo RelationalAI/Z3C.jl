@@ -1,0 +1,5 @@
+[general]
+library_name = "libz3"
+output_file_path = "./Z3_gen.jl"
+module_name = "Z3"
+jll_pkg_name = "z3_jll"
