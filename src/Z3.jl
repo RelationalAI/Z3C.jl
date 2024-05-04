@@ -2,7 +2,11 @@ module Z3
 
 include("libz3.jl")
 using .Libz3
-export DeclareSort, _main_ctx
+export DeclareSort, BoolSort, BoolVal, Solver, add, push, pop, check, CheckResult
+
+#---------#
+# Context #
+#---------#
 
 # Making struct mutable to register a finalizer
 mutable struct Context
@@ -37,12 +41,20 @@ function _get_ctx(ctx::Union{Context,Nothing})
     end
 end
 
+#-----#
+# AST #
+#-----#
+
 abstract type AST end
 
 Base.show(io::IO, x::AST) = print(io, unsafe_string(Z3_ast_to_string(ctx(x), as_ast(x))))
 
+#-------#
+# Sorts #
+#-------#
+
 struct Sort <: AST
-    ctx::Z3_sort
+    ctx::Z3_context
     sort::Z3_sort
 end
 
@@ -60,6 +72,73 @@ function DeclareSort(name::Union{String,Int}, ctx=nothing)
     sort = Z3_mk_uninterpreted_sort(_get_ctx(ctx), sym)
     return Sort(sort)
 end
+
+BoolSort(ctx=nothing) = Sort(Z3_mk_bool_sort(_get_ctx(ctx)))
+
+#-------------#
+# Expressions #
+#-------------#
+
+struct Expr <: AST
+    ctx::Z3_context
+    expr::Z3_ast
+end
+
+function Expr(expr::Z3_ast, ctx=nothing)
+    c = _get_ctx(ctx)
+    return Expr(c, expr)
+end
+
+ctx(e::Expr) = e.ctx
+
+as_ast(e::Expr) = e.expr
+
+BoolVal(b::Bool, ctx=nothing) = Expr(b ? Z3_mk_true(_get_ctx(ctx)) : Z3_mk_false(_get_ctx(ctx)))
+
+#--------#
+# Solver #
+#--------#
+
+mutable struct Solver
+    ctx::Z3_context
+    solver::Z3_solver
+end
+
+function Solver(ctx=nothing)
+    c = _get_ctx(ctx)
+    s = Z3_mk_solver(c)
+    finalizer(Solver(c, s)) do s
+        Z3_dec_ref(s.ctx, s.solver)
+    end
+end
+
+function add(s::Solver, e::Expr)
+    Z3_solver_assert(s.ctx, s.solver, as_ast(e))
+end
+
+function push(s::Solver)
+    Z3_solver_push(s.ctx, s.solver)
+end
+
+function pop(s::Solver, n=1)
+    Z3_solver_pop(s.ctx, s.solver, n)
+end
+
+struct CheckResult
+    result::Z3_lbool
+end
+
+CheckResult(r::Symbol) = r == :sat ? CheckResult(Z3_L_TRUE) : r == :unsat ? CheckResult(Z3_L_FALSE) : CheckResult(Z3_L_UNDEF) 
+
+function Base.show(io::IO, r::CheckResult)
+    print(io, r.result == Z3_L_TRUE ? "sat" : r.result == Z3_L_FALSE ? "unsat" : "unknown")
+end
+
+check(s::Solver) = CheckResult(Z3_solver_check(s.ctx, s.solver))
+
+#--------#
+# Others #
+#--------#
 
 function to_symbol(s::Union{String,Int}, ctx=nothing)
     _sym(s::String) = Z3_mk_string_symbol(_get_ctx(ctx), s)
