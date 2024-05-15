@@ -2,7 +2,8 @@ module Z3
 
 include("libz3.jl")
 using .Libz3
-export DeclareSort, BoolSort, BoolVal, Solver, add, push, pop, check, CheckResult
+import Base: ==
+export DeclareSort, BoolSort, IntSort, BoolVal, IntVal, Solver, add, push, pop, check, CheckResult
 
 #---------#
 # Context #
@@ -74,6 +75,7 @@ function DeclareSort(name::Union{String,Int}, ctx=nothing)
 end
 
 BoolSort(ctx=nothing) = Sort(Z3_mk_bool_sort(_get_ctx(ctx)))
+IntSort(ctx=nothing) = Sort(Z3_mk_int_sort(_get_ctx(ctx)))
 
 #-------------#
 # Expressions #
@@ -94,6 +96,11 @@ ctx(e::Expr) = e.ctx
 as_ast(e::Expr) = e.expr
 
 BoolVal(b::Bool, ctx=nothing) = Expr(b ? Z3_mk_true(_get_ctx(ctx)) : Z3_mk_false(_get_ctx(ctx)))
+
+IntVal(n::Integer, ctx=nothing) = Expr(Z3_mk_numeral(_get_ctx(ctx), string(n), IntSort(ctx).sort))
+
+(==)(a::Expr, b::Expr) = Expr(Z3_mk_eq(ctx(a), as_ast(a), as_ast(b)))
+
 
 #--------#
 # Solver #

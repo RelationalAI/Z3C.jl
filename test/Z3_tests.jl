@@ -27,3 +27,28 @@ end
     add(s, BoolVal(true))
     @test check(s) == CheckResult(:sat)
 end
+
+@testitem "create int sort" begin
+    sort = IntSort()
+    @test "$sort" == "Int"
+end
+
+@testitem "create int value" begin
+    n = IntVal(42)
+    @test "$n" == "42"
+end
+
+@testitem "int equality" begin
+    s = Solver()
+    push(s)
+    n1 = IntVal(42)
+    n2 = IntVal(42)
+    add(s, n1 == n2)
+    r = check(s)
+    @test r == CheckResult(:sat)
+    pop(s)
+    n3 = IntVal(43)
+    add(s, n1 == n3)
+    r = check(s)
+    @test r == CheckResult(:unsat)
+end
