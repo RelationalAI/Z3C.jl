@@ -8,14 +8,12 @@ end
     @test "$sort" == "Bool"
 end
 
-# @testitem "create bool value" begin
-#     init_ctx()
-#     t = BoolVal(true)
-#     @test "$t" == "true"
-#     f = BoolVal(false)
-#     @test "$f" == "false"
-#     clear_ctx()
-# end
+@testitem "create bool value" begin
+    t = BoolVal(true)
+    @test "$t" == "true"
+    f = BoolVal(false)
+    @test "$f" == "false"
+end
 
 # @testitem "simple solve" begin
 #     init_ctx()
@@ -38,12 +36,10 @@ end
     @test "$sort" == "Int"
 end
 
-# @testitem "create int value" begin
-#     init_ctx()
-#     n = IntVal(42)
-#     @test "$n" == "42"
-#     clear_ctx()
-# end
+@testitem "create int value" begin
+    n = IntVal(42)
+    @test "$n" == "42"
+end
 
 # @testitem "int equality" begin
 #     init_ctx()
@@ -61,19 +57,15 @@ end
 #     clear_ctx()
 # end
 
-# @testitem "create bitvec sort" begin
-#     init_ctx()
-#     sort = BitVecSort(8)
-#     @test "$sort" == "(_ BitVec 8)"
-#     clear_ctx()
-# end
+@testitem "create bitvec sort" begin
+    sort = BitVecSort(8)
+    @test "$sort" == "(_ BitVec 8)"
+end
 
-# @testitem "create bitvec value" begin
-#     init_ctx()
-#     v = BitVecVal(42, 8)
-#     @test "$v" == "#x2a"
-#     clear_ctx()
-# end
+@testitem "create bitvec value" begin
+    v = BitVecVal(42, 8)
+    @test "$v" == "#x2a"
+end
 
 @testitem "create float sorts" begin
     sort = Float16Sort()
@@ -84,13 +76,11 @@ end
     @test "$sort" == "(_ FloatingPoint 11 53)"
 end
 
-# @testitem "create float values" begin
-#     init_ctx()
-#     v = Float32Val(Float32(3.14))
-#     # hex & binary representation of 3.14
-#     @test "$v" == "(fp #b0 #x80 #b10010001111010111000011)"
-#     v = Float64Val(Float64(3.14))
-#     # binary & hex representation of 3.14
-#     @test "$v" == "(fp #b0 #b10000000000 #x91eb851eb851f)"
-#     clear_ctx()
-# end
+@testitem "create float values" begin
+    v = Float32Val(Float32(3.14))
+    # hex & binary representation of 3.14
+    @test "$v" == "(fp #b0 #x80 #b10010001111010111000011)"
+    v = Float64Val(Float64(3.14))
+    # binary & hex representation of 3.14
+    @test "$v" == "(fp #b0 #b10000000000 #x91eb851eb851f)"
+end

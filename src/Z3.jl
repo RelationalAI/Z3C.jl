@@ -110,23 +110,42 @@ end
 # Expressions #
 #-------------#
 
-# struct Expr <: AST
-#     expr::Z3_ast
+struct Expr <: AST
+    ctx::Context
+    expr::Z3_ast
+end
+
+as_ast(e::Expr) = e.expr
+ctx_ref(e::Expr) = ref(e.ctx)
+
+function BoolVal(b::Bool, ctx=nothing)
+    ctx = _get_ctx(ctx)
+    Expr(ctx, b ? Z3_mk_true(ref(ctx)) : Z3_mk_false(ref(ctx)))
+end
+
+function IntVal(n::Integer, ctx=nothing)
+    ctx = _get_ctx(ctx)
+    Expr(ctx, Z3_mk_numeral(ref(ctx), string(n), IntSort(ctx).ast))
+end
+
+function BitVecVal(v::Integer, sz::Int, ctx=nothing)
+    ctx = _get_ctx(ctx)
+    Expr(ctx, Z3_mk_numeral(ref(ctx), string(v), BitVecSort(sz, ctx).ast))
+end
+
+function Float32Val(v::Float32, ctx=nothing)
+    ctx = _get_ctx(ctx)
+    Expr(ctx, Z3_mk_fpa_numeral_float(ref(ctx), v, Float32Sort(ctx).ast))
+end
+
+function Float64Val(v::Float64, ctx=nothing)
+    ctx = _get_ctx(ctx)
+    Expr(ctx, Z3_mk_fpa_numeral_double(ref(ctx), v, Float64Sort(ctx).ast))
+end
+
+# function FP(name::String, fpsort::Sort)
+#     Expr(fpsort.ctx, Z3_mk_const(ref(fpsort.ctx), to_symbol(name, fpsort.ctx), fpsort.ast))
 # end
-
-# as_ast(e::Expr) = e.expr
-
-# BoolVal(b::Bool) = Expr(b ? Z3_mk_true(_get_ctx()) : Z3_mk_false(_get_ctx()))
-
-# IntVal(n::Integer) = Expr(Z3_mk_numeral(_get_ctx(), string(n), IntSort().sort))
-
-# BitVecVal(v::Integer, sz::Int) = Expr(Z3_mk_numeral(_get_ctx(), string(v), BitVecSort(sz).sort))
-
-# # Float16Val(v::Float16) = Expr(Z3_mk_fpa_numeral_float(_get_ctx(), v, Float16Sort().sort))
-# Float32Val(v::Float32) = Expr(Z3_mk_fpa_numeral_float(_get_ctx(), v, Float32Sort().sort))
-# Float64Val(v::Float64) = Expr(Z3_mk_fpa_numeral_double(_get_ctx(), v, Float64Sort().sort))
-
-# FP(name::String, fpsort::Sort) = Expr(Z3_mk_const(_get_ctx(), to_symbol(name), fpsort.sort))
 
 # (==)(a::Expr, b::Expr) = Expr(Z3_mk_eq(_get_ctx(), as_ast(a), as_ast(b)))
 
