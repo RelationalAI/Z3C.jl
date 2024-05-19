@@ -15,21 +15,18 @@ end
     @test "$f" == "false"
 end
 
-# @testitem "simple solve" begin
-#     init_ctx()
-#     s = Solver()
-#     push(s)
-#     add(s, BoolVal(false))
-#     r = check(s)
-#     @test r == CheckResult(:unsat)
-#     pop(s)
-#     r = check(s)
-#     @test r == CheckResult(:sat)
-#     add(s, BoolVal(true))
-#     @test check(s) == CheckResult(:sat)
-#     # del_solver(s)
-#     clear_ctx()
-# end
+@testitem "simple solve" begin
+    s = Solver()
+    push(s)
+    add(s, BoolVal(false))
+    r = check(s)
+    @test r == CheckResult(:unsat)
+    pop(s)
+    r = check(s)
+    @test r == CheckResult(:sat)
+    add(s, BoolVal(true))
+    @test check(s) == CheckResult(:sat)
+end
 
 @testitem "create int sort" begin
     sort = IntSort()
@@ -41,21 +38,18 @@ end
     @test "$n" == "42"
 end
 
-# @testitem "int equality" begin
-#     init_ctx()
-#     s = Solver()
-#     n1 = IntVal(42)
-#     n2 = IntVal(42)
-#     add(s, n1 == n2)
-#     r = check(s)
-#     @test r == CheckResult(:sat)
-#     n3 = IntVal(43)
-#     add(s, n1 == n3)
-#     r = check(s)
-#     @test r == CheckResult(:unsat)
-#     # del_solver(s)
-#     clear_ctx()
-# end
+@testitem "int equality" begin
+    s = Solver()
+    n1 = IntVal(42)
+    n2 = IntVal(42)
+    add(s, n1 == n2)
+    r = check(s)
+    @test r == CheckResult(:sat)
+    n3 = IntVal(43)
+    add(s, n1 == n3)
+    r = check(s)
+    @test r == CheckResult(:unsat)
+end
 
 @testitem "create bitvec sort" begin
     sort = BitVecSort(8)
@@ -83,4 +77,16 @@ end
     v = Float64Val(Float64(3.14))
     # binary & hex representation of 3.14
     @test "$v" == "(fp #b0 #b10000000000 #x91eb851eb851f)"
+end
+
+@testitem "int model" begin
+    s = Solver()
+    n = IntVal(42)
+    m = IntVal(40)
+    x = IntVar("x")
+    add(s, x < n)
+    add(s, x > m)
+    r = check(s)
+    @test r == CheckResult(:sat)
+    @test "$(model(s))" == "x -> 41\n"
 end

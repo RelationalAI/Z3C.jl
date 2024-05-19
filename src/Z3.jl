@@ -2,10 +2,10 @@ module Z3
 
 include("libz3.jl")
 using .Libz3
-import Base: ==
+import Base: ==, isless
 export init_ctx, clear_ctx, DeclareSort, BoolSort, IntSort, BitVecSort, Float16Sort, Float32Sort, Float64Sort,
 BoolVal, IntVal, BitVecVal, Float32Val, Float64Val, 
-FP,
+IntVar, FP,
 Solver, del_solver, add, push, pop, check, CheckResult, model
 
 #---------#
@@ -61,9 +61,16 @@ Base.show(io::IO, x::AST) = print(io, unsafe_string(Z3_ast_to_string(ctx_ref(x),
 # Sorts #
 #-------#
 
-struct Sort <: AST
+mutable struct Sort <: AST
     ctx::Context
     ast::Z3_sort
+    function Sort(ctx::Context, ast::Z3_sort)
+        s = new(ctx, ast)
+        Z3_inc_ref(ctx_ref(s), s.ast)
+        finalizer(s) do s
+            Z3_dec_ref(ctx_ref(s), s.ast)
+        end
+    end
 end
 
 as_ast(s::Sort) = Z3_sort_to_ast(ctx_ref(s), s.ast)
@@ -110,9 +117,16 @@ end
 # Expressions #
 #-------------#
 
-struct Expr <: AST
+mutable struct Expr <: AST
     ctx::Context
     expr::Z3_ast
+    function Expr(ctx::Context, expr::Z3_ast)
+        e = new(ctx, expr)
+        Z3_inc_ref(ctx_ref(e), e.expr)
+        finalizer(e) do e
+            Z3_dec_ref(ctx_ref(e), e.expr)
+        end
+    end
 end
 
 as_ast(e::Expr) = e.expr
@@ -143,61 +157,81 @@ function Float64Val(v::Float64, ctx=nothing)
     Expr(ctx, Z3_mk_fpa_numeral_double(ref(ctx), v, Float64Sort(ctx).ast))
 end
 
-# function FP(name::String, fpsort::Sort)
-#     Expr(fpsort.ctx, Z3_mk_const(ref(fpsort.ctx), to_symbol(name, fpsort.ctx), fpsort.ast))
-# end
+function FP(name::String, fpsort::Sort)
+    Expr(fpsort.ctx, Z3_mk_const(ctx_ref(fpsort), to_symbol(name, fpsort.ctx), fpsort.ast))
+end
 
-# (==)(a::Expr, b::Expr) = Expr(Z3_mk_eq(_get_ctx(), as_ast(a), as_ast(b)))
+(==)(a::Expr, b::Expr) = Expr(a.ctx, Z3_mk_eq(ctx_ref(a), as_ast(a), as_ast(b)))
+Base.isless(a::Expr, b::Expr) = Expr(a.ctx, Z3_mk_lt(ctx_ref(a), as_ast(a), as_ast(b)))
+
+function IntVar(name::String, ctx=nothing)
+    ctx = _get_ctx(ctx)
+    return Expr(ctx, Z3_mk_const(ref(ctx), to_symbol(name, ctx), IntSort(ctx).ast))
+end
 
 #--------#
 # Solver #
 #--------#
 
-# mutable struct Solver
-#     solver::Z3_solver
-# end
+mutable struct Solver
+    ctx::Context
+    solver::Z3_solver
+end
 
-# function Solver()
-#     Solver(Z3_mk_solver(_get_ctx()))
-# end
+ctx_ref(s::Solver) = ref(s.ctx)
 
-# function del_solver(s::Solver)
-#     Z3_solver_dec_ref(_get_ctx(), s.solver)
-# end
+function Solver(ctx=nothing)
+    ctx = _get_ctx(ctx)
+    s = Solver(ctx, Z3_mk_solver(ref(ctx)))
+    finalizer(s) do s
+        Z3_solver_dec_ref(ref(s.ctx), s.solver)
+    end
+end
 
-# function add(s::Solver, e::Expr)
-#     Z3_solver_assert(_get_ctx(), s.solver, as_ast(e))
-# end
+function add(s::Solver, e::Expr)
+    Z3_solver_assert(ref(s.ctx), s.solver, as_ast(e))
+end
 
-# function push(s::Solver)
-#     Z3_solver_push(_get_ctx(), s.solver)
-# end
+function push(s::Solver)
+    Z3_solver_push(ref(s.ctx), s.solver)
+end
 
-# function pop(s::Solver, n=1)
-#     Z3_solver_pop(_get_ctx(), s.solver, n)
-# end
+function pop(s::Solver, n=1)
+    Z3_solver_pop(ref(s.ctx), s.solver, n)
+end
 
-# struct Model
-#     model::Z3_model
-# end
+mutable struct Model
+    ctx::Context
+    model::Z3_model
 
-# model(s::Solver) = Model(Z3_solver_get_model(_get_ctx(), s.solver))
+    function Model(ctx::Context, model::Z3_model)
+        m = new(ctx, model)
+        Z3_model_inc_ref(ctx_ref(m), m.model)
+        finalizer(m) do m
+            Z3_model_dec_ref(ctx_ref(m), m.model)
+        end
+    end
+end
 
-# function Base.show(io::IO, m::Model)
-#     print(io, unsafe_string(Z3_model_to_string(_get_ctx(), m.model)))
-# end
+model(s::Solver) = Model(s.ctx, Z3_solver_get_model(ctx_ref(s), s.solver))
 
-# struct CheckResult
-#     result::Z3_lbool
-# end
+ctx_ref(m::Model) = ref(m.ctx)
 
-# CheckResult(r::Symbol) = r == :sat ? CheckResult(Z3_L_TRUE) : r == :unsat ? CheckResult(Z3_L_FALSE) : CheckResult(Z3_L_UNDEF) 
+function Base.show(io::IO, m::Model)
+    print(io, unsafe_string(Z3_model_to_string(ctx_ref(m), m.model)))
+end
 
-# function Base.show(io::IO, r::CheckResult)
-#     print(io, r.result == Z3_L_TRUE ? "sat" : r.result == Z3_L_FALSE ? "unsat" : "unknown")
-# end
+struct CheckResult
+    result::Z3_lbool
+end
 
-# check(s::Solver) = CheckResult(Z3_solver_check(_get_ctx(), s.solver))
+CheckResult(r::Symbol) = r == :sat ? CheckResult(Z3_L_TRUE) : r == :unsat ? CheckResult(Z3_L_FALSE) : CheckResult(Z3_L_UNDEF) 
+
+function Base.show(io::IO, r::CheckResult)
+    print(io, r.result == Z3_L_TRUE ? "sat" : r.result == Z3_L_FALSE ? "unsat" : "unknown")
+end
+
+check(s::Solver) = CheckResult(Z3_solver_check(ref(s.ctx), s.solver))
 
 #--------#
 # Others #
