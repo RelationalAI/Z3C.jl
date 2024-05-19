@@ -14,6 +14,12 @@ Solver, del_solver, add, push, pop, check, CheckResult, model
 
 mutable struct Context
     ctx::Z3_context
+    function Context(ctx::Z3_context)
+        c = new(ctx)
+        finalizer(c) do c
+            Z3_del_context(c.ctx)
+        end
+    end
 end
 
 function Context()
@@ -21,9 +27,7 @@ function Context()
     ctx = Z3_mk_context_rc(cfg)
     c = Context(ctx)
     Z3_del_config(cfg)
-    finalizer(c) do c
-        Z3_del_context(c.ctx)
-    end
+    return c
 end
 
 function ref(c::Context)
@@ -176,6 +180,13 @@ end
 mutable struct Solver
     ctx::Context
     solver::Z3_solver
+    function Solver(ctx::Context, solver::Z3_solver)
+        s = new(ctx, solver)
+        Z3_solver_inc_ref(ctx_ref(s), s.solver)
+        finalizer(s) do s
+            Z3_solver_dec_ref(ctx_ref(s), s.solver)
+        end
+    end
 end
 
 ctx_ref(s::Solver) = ref(s.ctx)
@@ -183,9 +194,6 @@ ctx_ref(s::Solver) = ref(s.ctx)
 function Solver(ctx=nothing)
     ctx = _get_ctx(ctx)
     s = Solver(ctx, Z3_mk_solver(ref(ctx)))
-    finalizer(s) do s
-        Z3_solver_dec_ref(ref(s.ctx), s.solver)
-    end
 end
 
 function add(s::Solver, e::Expr)
