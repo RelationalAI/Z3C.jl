@@ -5,7 +5,7 @@ using .Libz3
 import Base: ==, isless
 export init_ctx, clear_ctx, DeclareSort, BoolSort, IntSort, BitVecSort, Float16Sort, Float32Sort, Float64Sort,
 BoolVal, IntVal, BitVecVal, Float32Val, Float64Val, 
-IntVar, FP,
+Const, IntVar, FP, FuncDecl,
 Solver, del_solver, add, push, pop, check, CheckResult, model
 
 #---------#
@@ -60,6 +60,22 @@ end
 abstract type AST end
 
 Base.show(io::IO, x::AST) = print(io, unsafe_string(Z3_ast_to_string(ctx_ref(x), as_ast(x))))
+
+struct ASTVector
+    ctx::Context
+    vector::Z3_ast_vector
+    function ASTVector(ctx::Context, vector::Z3_ast_vector)
+        v = new(ctx, vector)
+        Z3_ast_vector_inc_ref(ref(v), v.vector)
+        finalizer(v) do v
+            Z3_ast_vector_dec_ref(ref(v), v.vector)
+        end
+    end
+end
+
+function ASTVector(ctx::Context)
+    ASTVector(ctx, Z3_mk_ast_vector(ref(ctx)))
+end
 
 #-------#
 # Sorts #
@@ -117,6 +133,31 @@ function Float64Sort(ctx=nothing)
     Sort(ctx, Z3_mk_fpa_sort_64(ref(ctx)))
 end
 
+#--------------#
+# Declarations #
+#--------------#
+mutable struct FuncDecl <: AST
+    ctx::Context
+    decl::Z3_func_decl
+    function FuncDecl(ctx::Context, decl::Z3_func_decl)
+        f = new(ctx, decl)
+        Z3_inc_ref(ctx_ref(f), f.decl)
+        finalizer(f) do f
+            Z3_dec_ref(ctx_ref(f), f.decl)
+        end
+    end
+end
+
+as_ast(f::FuncDecl) = Z3_func_decl_to_ast(ctx_ref(f), f.decl)
+
+ctx_ref(f::FuncDecl) = ref(f.ctx)
+
+function FuncDecl(name::String, domain::Vector{Sort}, range::Sort, ctx=nothing)
+    ctx = _get_ctx(ctx)
+    decl = Z3_mk_func_decl(ref(ctx), to_symbol(name, ctx), length(domain), map(s -> s.ast, domain), range.ast)
+    return FuncDecl(ctx, decl)
+end
+
 #-------------#
 # Expressions #
 #-------------#
@@ -171,6 +212,10 @@ Base.isless(a::Expr, b::Expr) = Expr(a.ctx, Z3_mk_lt(ctx_ref(a), as_ast(a), as_a
 function IntVar(name::String, ctx=nothing)
     ctx = _get_ctx(ctx)
     return Expr(ctx, Z3_mk_const(ref(ctx), to_symbol(name, ctx), IntSort(ctx).ast))
+end
+
+function Const(name::String, sort::Sort)
+    return Expr(sort.ctx, Z3_mk_const(ctx_ref(sort), to_symbol(name, sort.ctx), sort.ast))
 end
 
 #--------#

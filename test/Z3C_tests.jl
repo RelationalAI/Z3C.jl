@@ -90,3 +90,13 @@ end
     @test r == CheckResult(:sat)
     @test "$(model(s))" == "x -> 41\n"
 end
+
+@testitem "mk constant" begin
+    c = Const("c", IntSort())
+    @test "$c" == "c"
+end
+
+@testitem "mk funcdecl" begin
+    f = FuncDecl("f", [IntSort(), IntSort()], IntSort())
+    @test "$f" == "(declare-fun f (Int Int) Int)"
+end
