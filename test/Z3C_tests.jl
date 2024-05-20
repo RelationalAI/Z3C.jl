@@ -100,3 +100,41 @@ end
     f = FuncDecl("f", [IntSort(), IntSort()], IntSort())
     @test "$f" == "(declare-fun f (Int Int) Int)"
 end
+
+@testitem "mk funcapp" begin
+    f = FuncDecl("f", [IntSort(), IntSort()], IntSort())
+    x = IntVal(42)
+    y = IntVal(43)
+    a = f([x, y])
+    @test "$a" == "(f 42 43)"
+end
+
+@testitem "mk and" begin
+    x = BoolVal(true)
+    y = BoolVal(false)
+    a = And([x, y, y])
+    @test "$a" == "(and true false false)"
+end
+
+@testitem "mk or" begin
+    x = BoolVal(true)
+    y = BoolVal(false)
+    a = Or([x, y, y])
+    @test "$a" == "(or true false false)"
+end
+
+@testitem "mk not" begin
+    x = BoolVal(true)
+    a = Not(x)
+    @test "$a" == "(not true)"
+end
+
+@testitem "mk exists" begin
+    x = IntVar("x")
+    y = IntVar("y")
+    a = Exists([x, y], x < y)
+    # "!" is not negation in SMT; 
+    # it is an annotation for attaching weights
+    # it can be treated as a no-op
+    @test "$a" == "(exists ((x Int) (y Int)) (! (< x y) :weight 0))"
+end

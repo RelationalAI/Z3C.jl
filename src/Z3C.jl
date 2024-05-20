@@ -5,7 +5,7 @@ using .Libz3
 import Base: ==, isless
 export init_ctx, clear_ctx, DeclareSort, BoolSort, IntSort, BitVecSort, Float16Sort, Float32Sort, Float64Sort,
 BoolVal, IntVal, BitVecVal, Float32Val, Float64Val, 
-Const, IntVar, FP, FuncDecl,
+Const, IntVar, FP, FuncDecl, And, Or, Not, Exists,
 Solver, del_solver, add, push, pop, check, CheckResult, model
 
 #---------#
@@ -30,9 +30,7 @@ function Context()
     return c
 end
 
-function ref(c::Context)
-    c.ctx
-end
+ref(c::Context) = c.ctx
 
 # Global Z3 context
 const _main_ctx::Ref{Union{Context,Nothing}} = Ref{Union{Context,Nothing}}(nothing)
@@ -158,6 +156,10 @@ function FuncDecl(name::String, domain::Vector{Sort}, range::Sort, ctx=nothing)
     return FuncDecl(ctx, decl)
 end
 
+function (f::FuncDecl)(fargs)
+    return Expr(f.ctx, Z3_mk_app(ctx_ref(f), f.decl, length(fargs), map(e -> as_ast(e), fargs)))
+end
+
 #-------------#
 # Expressions #
 #-------------#
@@ -216,6 +218,26 @@ end
 
 function Const(name::String, sort::Sort)
     return Expr(sort.ctx, Z3_mk_const(ctx_ref(sort), to_symbol(name, sort.ctx), sort.ast))
+end
+
+function And(args::Vector{Expr})
+    ctx = args[1].ctx
+    return Expr(ctx, Z3_mk_and(ref(ctx), length(args), map(e -> as_ast(e), args)))
+end
+
+function Or(args::Vector{Expr})
+    ctx = args[1].ctx
+    return Expr(ctx, Z3_mk_or(ref(ctx), length(args), map(e -> as_ast(e), args)))
+end
+
+function Not(a::Expr)
+    ctx = a.ctx
+    return Expr(ctx, Z3_mk_not(ref(ctx), as_ast(a)))
+end
+
+function Exists(vars::Vector{Expr}, body::Expr)
+    ctx = body.ctx
+    return Expr(ctx, Z3_mk_exists_const(ref(ctx), 0, length(vars), map(e -> as_ast(e), vars), 0, [], as_ast(body)))
 end
 
 #--------#
