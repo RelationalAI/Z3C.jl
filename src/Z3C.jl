@@ -1,4 +1,4 @@
-module Z3
+module Z3C
 
 include("libz3.jl")
 using .Libz3
