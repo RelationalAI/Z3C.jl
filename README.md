@@ -1,4 +1,4 @@
-# Z3.jl
+# Z3C.jl
 
 Uses [Clang.jl](https://github.com/JuliaInterop/Clang.jl) to wrap 
  around Z3's [C API](https://z3prover.github.io/api/html/group__capi.html),
