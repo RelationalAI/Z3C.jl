@@ -6,7 +6,7 @@ import Base: ==, isless
 export init_ctx, clear_ctx, DeclareSort, BoolSort, IntSort, BitVecSort, Float16Sort, Float32Sort, Float64Sort,
 BoolVal, IntVal, BitVecVal, Float32Val, Float64Val, 
 Const, IntVar, FP, FuncDecl, And, Or, Not, Exists,
-Solver, del_solver, add, push, pop, check, CheckResult, model
+Context, Solver, del_solver, add, push, pop, check, CheckResult, model
 
 #---------#
 # Context #
