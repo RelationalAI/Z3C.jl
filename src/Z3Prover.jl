@@ -1,4 +1,4 @@
-module Z3C
+module Z3Prover
 
 include("libz3.jl")
 using .Libz3
@@ -320,3 +320,4 @@ function to_symbol(s::Union{String,Int}, ctx=nothing)
 end
 
 end
+
