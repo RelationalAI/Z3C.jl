@@ -6,7 +6,7 @@ import Base: ==, isless
 export init_ctx, clear_ctx, Sort, DeclareSort, BoolSort, IntSort, BitVecSort, Float16Sort, Float32Sort, Float64Sort,
 BoolVal, IntVal, BitVecVal, Float32Val, Float64Val, 
 Const, IntVar, FP, FuncDecl, And, Or, Not, Exists,
-Context, Solver, del_solver, add, push, pop, check, CheckResult, model
+Context, Solver, del_solver, add, push, pop, check, CheckResult, model, assertions
 
 #---------#
 # Context #
@@ -307,6 +307,8 @@ function Base.show(io::IO, r::CheckResult)
 end
 
 check(s::Solver) = CheckResult(Z3_solver_check(ref(s.ctx), s.solver))
+
+assertions(s::Solver) = unsafe_string(Z3_ast_vector_to_string(s.ctx, Z3_solver_get_assertions(ref(s.ctx), s.solver)))
 
 #--------#
 # Others #
