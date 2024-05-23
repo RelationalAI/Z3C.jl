@@ -308,7 +308,7 @@ end
 
 check(s::Solver) = CheckResult(Z3_solver_check(ref(s.ctx), s.solver))
 
-assertions(s::Solver) = unsafe_string(Z3_ast_vector_to_string(s.ctx, Z3_solver_get_assertions(ref(s.ctx), s.solver)))
+assertions(s::Solver) = unsafe_string(Z3_ast_vector_to_string(ref(s.ctx), Z3_solver_get_assertions(ref(s.ctx), s.solver)))
 
 #--------#
 # Others #

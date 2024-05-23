@@ -138,3 +138,11 @@ end
     # it can be treated as a no-op
     @test "$a" == "(exists ((x Int) (y Int)) (! (< x y) :weight 0))"
 end
+
+@testitem "get assertions" begin
+    s = Solver()
+    x = IntVar("x")
+    y = IntVar("y")
+    add(s, x < y)
+    @test "$(assertions(s))" == "(ast-vector\n  (< x y))"
+end
