@@ -16,6 +16,7 @@ mutable struct Context
     ctx::Z3_context
     function Context(ctx::Z3_context)
         c = new(ctx)
+        Z3_enable_concurrent_dec_ref(c.ctx)
         finalizer(c) do c
             Z3_del_context(c.ctx)
         end
