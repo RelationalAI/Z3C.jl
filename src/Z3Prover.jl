@@ -5,7 +5,7 @@ using .Libz3
 import Base: ==, isless
 export init_ctx, clear_ctx, Sort, DeclareSort, BoolSort, IntSort, BitVecSort, Float16Sort, Float32Sort, Float64Sort,
 BoolVal, IntVal, BitVecVal, Float32Val, Float64Val, 
-Const, IntVar, FP, FuncDecl, And, Or, Not, Exists,
+Const, IntVar, FP, FuncDecl, And, Or, Not, Exists, Sort,
 Context, Solver, del_solver, add, push, pop, check, CheckResult, model, assertions
 
 #---------#
@@ -24,6 +24,7 @@ end
 
 function Context()
     cfg = Z3_mk_config()
+    Z3_set_param_value(cfg, "debug_ref_count", "true")
     ctx = Z3_mk_context_rc(cfg)
     Z3_enable_concurrent_dec_ref(ctx)
     c = Context(ctx)
