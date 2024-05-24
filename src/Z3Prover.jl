@@ -38,6 +38,7 @@ ref(c::Context) = c.ctx
 const _main_ctx::Ref{Union{Context,Nothing}} = Ref{Union{Context,Nothing}}(nothing)
 
 function main_ctx()
+    @error "Using global context!!!"
     global _main_ctx
     if isnothing(_main_ctx[])
         _main_ctx[] = Context()
