@@ -14,9 +14,11 @@ Context, Solver, del_solver, add, push, pop, check, CheckResult, model, assertio
 
 mutable struct Context
     ctx::Z3_context
-    function Context(ctx::Z3_context)
-        c = new(ctx)
+    finalized::Bool
+    function Context(ctx::Z3_context, finalized=false)
+        c = new(ctx, finalized)
         finalizer(c) do c
+            c.finalized = true
             Z3_del_context(c.ctx)
         end
     end
@@ -89,7 +91,9 @@ mutable struct Sort <: AST
         s = new(ctx, ast)
         Z3_inc_ref(ctx_ref(s), s.ast)
         finalizer(s) do s
-            Z3_dec_ref(ctx_ref(s), s.ast)
+            if !s.ctx.finalized
+                Z3_dec_ref(ctx_ref(s), s.ast)
+            end
         end
     end
 end
