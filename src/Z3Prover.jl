@@ -64,22 +64,6 @@ abstract type AST end
 
 Base.show(io::IO, x::AST) = print(io, unsafe_string(Z3_ast_to_string(ctx_ref(x), as_ast(x))))
 
-struct ASTVector
-    ctx::Context
-    vector::Z3_ast_vector
-    function ASTVector(ctx::Context, vector::Z3_ast_vector)
-        v = new(ctx, vector)
-        Z3_ast_vector_inc_ref(ref(v), v.vector)
-        finalizer(v) do v
-            Z3_ast_vector_dec_ref(ref(v), v.vector)
-        end
-    end
-end
-
-function ASTVector(ctx::Context)
-    ASTVector(ctx, Z3_mk_ast_vector(ref(ctx)))
-end
-
 #-------#
 # Sorts #
 #-------#
@@ -148,7 +132,9 @@ mutable struct FuncDecl <: AST
         f = new(ctx, decl)
         Z3_inc_ref(ctx_ref(f), f.decl)
         finalizer(f) do f
-            Z3_dec_ref(ctx_ref(f), f.decl)
+            if !f.ctx.finalized
+                Z3_dec_ref(ctx_ref(f), f.decl)
+            end
         end
     end
 end
@@ -178,7 +164,9 @@ mutable struct Expr <: AST
         e = new(ctx, expr)
         Z3_inc_ref(ctx_ref(e), e.expr)
         finalizer(e) do e
-            Z3_dec_ref(ctx_ref(e), e.expr)
+            if !e.ctx.finalized
+                Z3_dec_ref(ctx_ref(e), e.expr)
+            end
         end
     end
 end
@@ -258,7 +246,9 @@ mutable struct Solver
         s = new(ctx, solver)
         Z3_solver_inc_ref(ctx_ref(s), s.solver)
         finalizer(s) do s
-            Z3_solver_dec_ref(ctx_ref(s), s.solver)
+            if !s.ctx.finalized
+                Z3_solver_dec_ref(ctx_ref(s), s.solver)
+            end
         end
     end
 end
@@ -290,7 +280,9 @@ mutable struct Model
         m = new(ctx, model)
         Z3_model_inc_ref(ctx_ref(m), m.model)
         finalizer(m) do m
-            Z3_model_dec_ref(ctx_ref(m), m.model)
+            if !m.ctx.finalized
+                Z3_model_dec_ref(ctx_ref(m), m.model)
+            end
         end
     end
 end
